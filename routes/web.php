@@ -49,6 +49,10 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->group(function () {
     Route::get('/manual-attendance', [App\Http\Controllers\GuruController::class, 'manualAttendance'])->name('guru.manual_attendance');
 Route::post('/manual-attendance', [App\Http\Controllers\GuruController::class, 'manualAttendance']);
 Route::get('/students/{room_id}', [App\Http\Controllers\GuruController::class, 'getStudentsByRoom'])->name('get.students');
+Route::get('/manual-attendance', [GuruController::class, 'manualAttendance'])->name('guru.manual_attendance');
+Route::post('/manual-attendance', [GuruController::class, 'submitManualAttendance']);
+Route::get('/students/{room_id}', [GuruController::class, 'getStudentsByRoom'])->name('get.students');
+
 });
 
 // Admin Routes
@@ -94,7 +98,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('admin.students.edit');
     Route::put('/students/{student}', [StudentController::class, 'update'])->name('admin.students.update');
     Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('admin.students.destroy');
-    
+
     // Users Resource
     Route::resource('users', AdminController::class)->names([
         'index' => 'admin.users.index',

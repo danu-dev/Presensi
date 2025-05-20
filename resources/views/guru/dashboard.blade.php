@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Dashboard Guru')
+@section('header-title', 'Dashboard Guru')
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 py-8">
@@ -9,7 +10,7 @@
             <div class="px-6 py-8 md:px-8 md:py-10 flex flex-col md:flex-row justify-between items-center">
                 <div class="mb-6 md:mb-0">
                     <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold text-white">
-                        Selamat {{ now()->format('H') < 12 ? 'Pagi' : (now()->format('H') < 15 ? 'Siang' : (now()->format('H') < 18 ? 'Sore' : 'Malam')) }}, 
+                        Selamat {{ now()->format('H') < 12 ? 'Pagi' : (now()->format('H') < 15 ? 'Siang' : (now()->format('H') < 18 ? 'Sore' : 'Malam')) }},
                         <span class="text-yellow-300">{{ auth()->user()->name }}</span>
                     </h1>
                     <p class="text-blue-100 mt-2 md:text-lg">{{ now()->locale('id')->format('l, d F Y') }}</p>
@@ -26,6 +27,12 @@
             </div>
         </div>
 
+        <!-- Empty State Message -->
+        @if($rooms->isEmpty())
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center">
+                <p class="text-gray-600">Belum ada ruangan yang dikelola. Silakan hubungi admin untuk mengatur ruangan.</p>
+            </div>
+        @else
         <!-- Stats Overview -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
             <!-- Ruangan Dikelola -->
@@ -70,11 +77,11 @@
                 </div>
             </div>
 
-            <!-- Hadir Hari Ini -->
+            <!-- Sudah Hadir Hari Ini -->
             <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-xl">
                 <div class="p-6 flex justify-between">
                     <div>
-                        <p class="text-gray-500 font-medium text-sm">Hadir Hari Ini</p>
+                        <p class="text-gray-500 font-medium text-sm">Sudah Hadir Hari Ini</p>
                         <h3 class="text-3xl font-bold text-gray-800 mt-1">{{ $todayStats['present'] ?? 0 }}</h3>
                         <p class="text-blue-500 text-sm mt-2 flex items-center">
                             <i class="fas fa-user-check mr-1"></i> Siswa
@@ -145,15 +152,15 @@
                         <a href="{{ url('guru/report') }}" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-lg shadow hover:shadow-lg transition-all flex items-center justify-center">
                             <i class="fas fa-file-export mr-2"></i> Ekspor Laporan Absensi
                         </a>
-                        
+
                         <a href="{{ url('guru/permissions') }}" class="bg-gradient-to-r from-indigo-400 to-indigo-500 text-white py-3 px-4 rounded-lg shadow hover:shadow-lg transition-all flex items-center justify-center">
                             <i class="fas fa-check-circle mr-2"></i> Validasi Izin Siswa
                         </a>
-                        
+
                         <a href="{{ url('guru/manual-attendance') }}" class="bg-gradient-to-r from-green-400 to-green-500 text-white py-3 px-4 rounded-lg shadow hover:shadow-lg transition-all flex items-center justify-center">
                             <i class="fas fa-user-check mr-2"></i> Absen Manual
                         </a>
-                        
+
                         <a href="#" class="bg-gradient-to-r from-purple-400 to-purple-500 text-white py-3 px-4 rounded-lg shadow hover:shadow-lg transition-all flex items-center justify-center">
                             <i class="fas fa-bell mr-2"></i> Buat Pengumuman
                         </a>
@@ -180,7 +187,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
                             <div class="flex">
                                 <div class="flex-shrink-0">
@@ -218,7 +225,7 @@
                                 <p class="text-xs text-gray-500">{{ now()->subMinutes(15)->format('H:i') }} - {{ now()->format('d M Y') }}</p>
                             </div>
                         </div>
-                        
+
                         <div class="py-3 flex items-start">
                             <div class="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mr-4">
                                 <i class="fas fa-check-circle text-green-500"></i>
@@ -228,7 +235,7 @@
                                 <p class="text-xs text-gray-500">{{ now()->subHours(2)->format('H:i') }} - {{ now()->format('d M Y') }}</p>
                             </div>
                         </div>
-                        
+
                         <div class="py-3 flex items-start">
                             <div class="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center mr-4">
                                 <i class="fas fa-file-alt text-yellow-500"></i>
@@ -238,7 +245,7 @@
                                 <p class="text-xs text-gray-500">{{ now()->subHours(3)->format('H:i') }} - {{ now()->format('d M Y') }}</p>
                             </div>
                         </div>
-                        
+
                         <div class="py-3 flex items-start">
                             <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
                                 <i class="fas fa-file-export text-indigo-500"></i>
@@ -266,9 +273,9 @@
                                 <i class="fas fa-user-check text-green-500 text-2xl"></i>
                             </div>
                             <h4 class="text-2xl font-bold text-gray-800">{{ $todayStats['present'] ?? 0 }}</h4>
-                            <p class="text-sm text-gray-500">Hadir</p>
+                            <p class="text-sm text-gray-500">Sudah Hadir</p>
                         </div>
-                        
+
                         <div class="text-center">
                             <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-yellow-100 mb-2">
                                 <i class="fas fa-file-alt text-yellow-500 text-2xl"></i>
@@ -276,16 +283,16 @@
                             <h4 class="text-2xl font-bold text-gray-800">{{ $todayStats['permission'] ?? 0 }}</h4>
                             <p class="text-sm text-gray-500">Izin</p>
                         </div>
-                        
+
                         <div class="text-center">
                             <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-2">
                                 <i class="fas fa-user-times text-red-500 text-2xl"></i>
                             </div>
                             <h4 class="text-2xl font-bold text-gray-800">{{ $todayStats['absent'] ?? 0 }}</h4>
-                            <p class="text-sm text-gray-500">Absen</p>
+                            <p class="text-sm text-gray-500">Alpa</p>
                         </div>
                     </div>
-                    
+
                     <div class="rounded-lg bg-gray-50 p-4">
                         <div class="flex justify-between items-center mb-3">
                             <h5 class="font-medium text-gray-700">Persentase Kehadiran</h5>
@@ -304,28 +311,31 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
 </div>
+@endsection
 
+@section('scripts')
 <!-- Chart.js Script -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('attendanceChart').getContext('2d');
-    
+
     // Day names and data from controller
     const dayNames = [@foreach($weeklyData as $data)'{{ $data['day'] }}'@if(!$loop->last),@endif @endforeach];
     const presentData = [@foreach($weeklyData as $data){{ $data['present'] }}@if(!$loop->last),@endif @endforeach];
     const permissionData = [@foreach($weeklyData as $data){{ $data['permission'] }}@if(!$loop->last),@endif @endforeach];
     const absentData = [@foreach($weeklyData as $data){{ $data['absent'] }}@if(!$loop->last),@endif @endforeach];
-    
+
     const attendanceChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: dayNames,
             datasets: [
                 {
-                    label: 'Hadir',
+                    label: 'Sudah Hadir',
                     data: presentData,
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     borderColor: 'rgba(16, 185, 129, 1)',
@@ -343,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     fill: true
                 },
                 {
-                    label: 'Absen',
+                    label: 'Alpa',
                     data: absentData,
                     backgroundColor: 'rgba(239, 68, 68, 0.1)',
                     borderColor: 'rgba(239, 68, 68, 1)',

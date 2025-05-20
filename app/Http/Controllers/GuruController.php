@@ -1,29 +1,59 @@
 <?php
-
 namespace App\Http\Controllers;
 
+use App\Exports\AttendanceExport;
 use App\Models\Attendance;
 use App\Models\Permission;
 use App\Models\Room;
+use App\Models\User;
 use Illuminate\Http\Request;
-use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class GuruController extends Controller
 {
     public function dashboard()
     {
+        // Get rooms managed by the authenticated teacher
         $rooms = Room::where('guru_id', auth()->id())->get();
+        if ($rooms->isEmpty()) {
+            return view('guru.dashboard', [
+                'rooms'              => collect(),
+                'pendingPermissions' => 0,
+                'todayStats'         => ['present' => 0, 'permission' => 0, 'absent' => 0],
+                'weeklyData'         => [],
+            ]);
+        }
+
         $roomIds = $rooms->pluck('id');
 
+        // Get distinct student IDs who have attended these rooms
         $studentIds = Attendance::whereIn('room_id', $roomIds)
             ->distinct('user_id')
             ->pluck('user_id');
 
-        // Calculate weekly attendance data
+        // Cache today's attendance and permission counts
+        $todayDate    = now()->toDateString();
+        $todayPresent = Attendance::whereIn('room_id', $roomIds)
+            ->whereDate('check_in', $todayDate)
+            ->whereNotNull('check_in')
+            ->count();
+        $todayPermission = Permission::whereIn('user_id', $studentIds)
+            ->where('status', 'approved')
+            ->whereDate('date', $todayDate)
+            ->count();
+
+        // Calculate today's stats: Sudah Hadir (present), Izin (permission), Alpa (absent)
+        $totalStudents = $studentIds->count();
+        $todayStats    = [
+            'present'    => $todayPresent,
+            'permission' => $todayPermission,
+            'absent'     => max(0, $totalStudents - ($todayPresent + $todayPermission)),
+        ];
+
+        // Calculate weekly attendance data (Sudah Hadir, Izin, Alpa)
         $weeklyData = [];
         for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i)->toDateString();
+            $date    = now()->subDays($i)->toDateString();
             $present = Attendance::whereIn('room_id', $roomIds)
                 ->whereDate('check_in', $date)
                 ->whereNotNull('check_in')
@@ -32,45 +62,24 @@ class GuruController extends Controller
                 ->where('status', 'approved')
                 ->whereDate('date', $date)
                 ->count();
-            $totalStudents = $studentIds->count();
-            $absent = max(0, $totalStudents - ($present + $permission));
+            $absent       = max(0, $totalStudents - ($present + $permission));
             $weeklyData[] = [
-                'day' => now()->subDays($i)->locale('id')->format('l'),
-                'present' => $present,
+                'day'        => now()->subDays($i)->locale('id')->format('l'),
+                'present'    => $present,
                 'permission' => $permission,
-                'absent' => $absent
+                'absent'     => $absent,
             ];
         }
 
+        // Count pending permissions
         $pendingPermissions = Permission::whereNull('status')->count();
-
-        $todayStats = [
-            'present' => Attendance::whereIn('room_id', $roomIds)
-                ->whereDate('check_in', now()->toDateString())
-                ->whereNotNull('check_in')
-                ->count(),
-            'permission' => Permission::whereIn('user_id', $studentIds)
-                ->where('status', 'approved')
-                ->whereDate('date', now()->toDateString())
-                ->count(),
-            'absent' => $studentIds->count() - (
-                Attendance::whereIn('room_id', $roomIds)
-                    ->whereDate('check_in', now()->toDateString())
-                    ->whereNotNull('check_in')
-                    ->count() +
-                Permission::whereIn('user_id', $studentIds)
-                    ->where('status', 'approved')
-                    ->whereDate('date', now()->toDateString())
-                    ->count()
-            )
-        ];
 
         return view('guru.dashboard', compact('rooms', 'pendingPermissions', 'todayStats', 'weeklyData'));
     }
 
     public function report(Request $request)
     {
-        $rooms = Room::where('guru_id', auth()->id())->get();
+        $rooms   = Room::where('guru_id', auth()->id())->get();
         $roomIds = $rooms->pluck('id');
 
         $query = Attendance::whereIn('room_id', $roomIds)
@@ -123,5 +132,131 @@ class GuruController extends Controller
         $permission = Permission::with('user')->findOrFail($id);
         return view('guru.permission_show', compact('permission'));
     }
-    
+
+    public function manualAttendance(Request $request)
+    {
+        $teacherId = auth()->id();
+        $rooms     = Room::where('guru_id', $teacherId)->get();
+
+        $selectedRoomId = $request->room_id ?? ($rooms->first()->id ?? null);
+        $date           = $request->date ?? now()->toDateString();
+
+        $students            = collect();
+        $existingAttendances = collect();
+        $permissions         = collect();
+
+        if ($selectedRoomId) {
+            $students = User::whereHas('attendances', function ($q) use ($selectedRoomId) {
+                $q->where('room_id', $selectedRoomId);
+            })->paginate(10);
+
+            $existingAttendances = Attendance::where('room_id', $selectedRoomId)
+                ->whereDate('check_in', $date)
+                ->get()
+                ->keyBy('user_id');
+
+            $permissions = Permission::whereIn('user_id', $students->pluck('id'))
+                ->whereDate('date', $date)
+                ->where('status', 'approved')
+                ->get()
+                ->keyBy('user_id');
+        }
+
+        return view('guru.manual_attendance', compact(
+            'rooms',
+            'students',
+            'selectedRoomId',
+            'date',
+            'existingAttendances',
+            'permissions'
+        ));
+    }
+
+    public function submitManualAttendance(Request $request)
+    {
+        $request->validate([
+            'room_id'       => 'required|exists:rooms,id',
+            'date'          => 'required|date',
+            'attendances'   => 'required|array',
+            'attendances.*' => 'in:present,permission,absent',
+        ]);
+
+        $teacherId = auth()->id();
+        $room      = Room::findOrFail($request->room_id);
+
+        // Verify the teacher owns this room
+        if ($room->guru_id != $teacherId) {
+            return back()->with('error', 'Unauthorized action.');
+        }
+
+        $date = $request->date;
+
+                                               // Map room_id to location_id (based on seeder)
+        $locationId = $room->id === 1 ? 1 : 2; // Ruang 10A -> Kelas A, Ruang 10B -> Kelas B
+
+        foreach ($request->attendances as $userId => $status) {
+            // Check if user has an attendance record for this room
+            if (! Attendance::where('room_id', $room->id)->where('user_id', $userId)->exists()) {
+                continue;
+            }
+
+            if ($status === 'present') {
+                Attendance::updateOrCreate(
+                    [
+                        'user_id'  => $userId,
+                        'room_id'  => $room->id,
+                        'check_in' => $date,
+                    ],
+                    [
+                        'location_id' => $locationId,
+                        'status'      => 'manual',
+                        'check_in'    => $date . ' 08:00:00',
+                        'check_out'   => $date . ' 16:00:00',
+                    ]
+                );
+                Permission::where('user_id', $userId)
+                    ->whereDate('date', $date)
+                    ->delete();
+            } elseif ($status === 'permission') {
+                Permission::firstOrCreate(
+                    [
+                        'user_id' => $userId,
+                        'date'    => $date,
+                    ],
+                    [
+                        'name'         => 'Manual Permission',
+                        'description'  => 'Entered by teacher',
+                        'proof_image'  => 'no_image.jpg',
+                        'status'       => 'approved',
+                        'validated_by' => $teacherId,
+                        'validated_at' => now(),
+                    ]
+                );
+                Attendance::where('user_id', $userId)
+                    ->where('room_id', $room->id)
+                    ->whereDate('check_in', $date)
+                    ->delete();
+            } elseif ($status === 'absent') {
+                Attendance::where('user_id', $userId)
+                    ->where('room_id', $room->id)
+                    ->whereDate('check_in', $date)
+                    ->delete();
+                Permission::where('user_id', $userId)
+                    ->whereDate('date', $date)
+                    ->delete();
+            }
+        }
+
+        return back()->with('success', 'Attendance records updated successfully.');
+    }
+
+    public function getStudentsByRoom($roomId)
+    {
+        // Query students who have attended the specified room
+        $students = User::whereHas('attendances', function ($q) use ($roomId) {
+            $q->where('room_id', $roomId);
+        })->get();
+
+        return response()->json($students);
+    }
 }

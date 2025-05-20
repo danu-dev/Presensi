@@ -7,6 +7,7 @@
     <title>KELAS DIGITAL - XI RPL 2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    @vite('resources/js/app.js','resources/css/app.css')
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <style>
@@ -813,5 +814,6 @@
         }
     }
     </script>
+    <script src="//unpkg.com/alpinejs" defer></script>
 </body>
 </html>

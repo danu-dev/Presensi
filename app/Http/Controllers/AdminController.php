@@ -1,13 +1,11 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
+use App\Models\Attendance;
+use App\Models\Location;
+use App\Models\Permission;
 use App\Models\Room;
 use App\Models\User;
-use App\Models\Location;
-use App\Models\Attendance;
-use App\Models\Permission;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
@@ -15,15 +13,15 @@ class AdminController extends Controller
     public function dashboard()
     {
         // Data untuk statistik kartu
-        $users = User::count();
-        $locations = Location::count();
-        $rooms = Room::count();
-        $attendancesToday = Attendance::whereDate('check_in', now()->startOfDay())->count();
+        $users              = User::count();
+        $locations          = Location::count();
+        $rooms              = Room::count();
+        $attendancesToday   = Attendance::whereDate('check_in', now()->startOfDay())->count();
         $pendingPermissions = Permission::whereNull('status')->count();
 
         // Data untuk grafik absensi mingguan
         $startOfWeek = now()->startOfWeek();
-        $endOfWeek = now()->endOfWeek();
+        $endOfWeek   = now()->endOfWeek();
 
         $weeklyAttendance = Attendance::selectRaw('DATE(check_in) as date, COUNT(*) as total')
             ->whereBetween('check_in', [$startOfWeek, $endOfWeek])
@@ -34,14 +32,14 @@ class AdminController extends Controller
             ->all();
 
         // Format data untuk grafik
-        $labels = [];
-        $data = [];
+        $labels      = [];
+        $data        = [];
         $currentDate = $startOfWeek->copy();
 
         while ($currentDate <= $endOfWeek) {
             $dateString = $currentDate->format('Y-m-d');
-            $labels[] = $currentDate->format('D'); // Hari dalam format singkat (Sen, Sel, dll)
-            $data[] = $weeklyAttendance[$dateString] ?? 0; // Jika tidak ada data, isi 0
+            $labels[]   = $currentDate->format('D');           // Hari dalam format singkat (Sen, Sel, dll)
+            $data[]     = $weeklyAttendance[$dateString] ?? 0; // Jika tidak ada data, isi 0
             $currentDate->addDay();
         }
 
@@ -71,18 +69,47 @@ class AdminController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
+        $rules = [
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:6',
-            'role' => 'required|in:user,guru,admin',
-        ]);
+            'role'     => 'required|in:user,guru,admin',
+        ];
+
+        $messages = [
+            'name.required'     => 'Nama wajib diisi.',
+            'name.string'       => 'Nama harus berupa teks.',
+            'name.max'          => 'Nama tidak boleh lebih dari 255 karakter.',
+            'email.required'    => 'Email wajib diisi.',
+            'email.email'       => 'Format email tidak valid.',
+            'email.unique'      => 'Email sudah terdaftar.',
+            'password.required' => 'Kata sandi wajib diisi.',
+            'password.min'      => 'Kata sandi minimal 6 karakter.',
+            'role.required'     => 'Role wajib dipilih.',
+            'role.in'           => 'Role tidak valid.',
+        ];
+
+        if ($request->role === 'user') {
+            $rules['nisn']             = 'required|string|unique:users,nisn|digits:10';
+            $messages['nisn.required'] = 'NISN wajib diisi untuk siswa.';
+            $messages['nisn.string']   = 'NISN harus berupa teks.';
+            $messages['nisn.unique']   = 'NISN sudah terdaftar.';
+            $messages['nisn.digits']   = 'NISN harus terdiri dari 10 digit.';
+        } else {
+            $rules['nisn']           = 'nullable|string|unique:users,nisn|digits:10';
+            $messages['nisn.string'] = 'NISN harus berupa teks.';
+            $messages['nisn.unique'] = 'NISN sudah terdaftar.';
+            $messages['nisn.digits'] = 'NISN harus terdiri dari 10 digit.';
+        }
+
+        $request->validate($rules, $messages);
 
         User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'nisn'     => $request->nisn,
             'password' => bcrypt($request->password),
-            'role' => $request->role,
+            'role'     => $request->role,
         ]);
 
         return redirect()->route('admin.users.index')->with('success', 'User ditambahkan.');
@@ -97,16 +124,49 @@ class AdminController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
-        $request->validate([
-            'name' => 'required',
+
+        $rules = [
+            'name'  => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'role' => 'required|in:user,guru,admin',
-        ]);
+            'role'  => 'required|in:user,guru,admin',
+        ];
+
+        $messages = [
+            'name.required'  => 'Nama wajib diisi.',
+            'name.string'    => 'Nama harus berupa teks.',
+            'name.max'       => 'Nama tidak boleh lebih dari 255 karakter.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email'    => 'Format email tidak valid.',
+            'email.unique'   => 'Email sudah terdaftar.',
+            'role.required'  => 'Role wajib dipilih.',
+            'role.in'        => 'Role tidak valid.',
+        ];
+
+        if ($request->role === 'user') {
+            $rules['nisn']             = 'required|string|unique:users,nisn,' . $id . '|digits:10';
+            $messages['nisn.required'] = 'NISN wajib diisi untuk siswa.';
+            $messages['nisn.string']   = 'NISN harus berupa teks.';
+            $messages['nisn.unique']   = 'NISN sudah terdaftar.';
+            $messages['nisn.digits']   = 'NISN harus terdiri dari 10 digit.';
+        } else {
+            $rules['nisn']           = 'nullable|string|unique:users,nisn,' . $id . '|digits:10';
+            $messages['nisn.string'] = 'NISN harus berupa teks.';
+            $messages['nisn.unique'] = 'NISN sudah terdaftar.';
+            $messages['nisn.digits'] = 'NISN harus terdiri dari 10 digit.';
+        }
+
+        if ($request->password) {
+            $rules['password']        = 'min:6';
+            $messages['password.min'] = 'Kata sandi minimal 6 karakter.';
+        }
+
+        $request->validate($rules, $messages);
 
         $user->update([
-            'name' => $request->name,
+            'name'  => $request->name,
             'email' => $request->email,
-            'role' => $request->role,
+            'nisn'  => $request->nisn,
+            'role'  => $request->role,
         ]);
 
         if ($request->password) {
@@ -137,10 +197,10 @@ class AdminController extends Controller
     public function storeLocations(Request $request)
     {
         $request->validate([
-            'name' => 'required',
-            'latitude' => 'required|numeric',
+            'name'      => 'required',
+            'latitude'  => 'required|numeric',
             'longitude' => 'required|numeric',
-            'radius' => 'required|integer',
+            'radius'    => 'required|integer',
         ]);
 
         Location::create($request->all());
@@ -157,10 +217,10 @@ class AdminController extends Controller
     {
         $location = Location::findOrFail($id);
         $request->validate([
-            'name' => 'required',
-            'latitude' => 'required|numeric',
+            'name'      => 'required',
+            'latitude'  => 'required|numeric',
             'longitude' => 'required|numeric',
-            'radius' => 'required|integer',
+            'radius'    => 'required|integer',
         ]);
 
         $location->update($request->all());
@@ -189,7 +249,7 @@ class AdminController extends Controller
     public function storeRooms(Request $request)
     {
         $request->validate([
-            'name' => 'required',
+            'name'    => 'required',
             'guru_id' => 'required|exists:users,id',
         ]);
 
@@ -199,7 +259,7 @@ class AdminController extends Controller
 
     public function editRooms($id)
     {
-        $room = Room::findOrFail($id);
+        $room  = Room::findOrFail($id);
         $gurus = User::where('role', 'guru')->get();
         return view('admin.rooms.edit', compact('room', 'gurus'));
     }
@@ -208,7 +268,7 @@ class AdminController extends Controller
     {
         $room = Room::findOrFail($id);
         $request->validate([
-            'name' => 'required',
+            'name'    => 'required',
             'guru_id' => 'required|exists:users,id',
         ]);
 

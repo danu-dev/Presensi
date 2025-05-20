@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('header-title', 'Edit Pengguna')
+
 @section('content')
 <div class="py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,6 +28,15 @@
                             <label for="email" class="block text-sm font-medium text-gray-700">Alamat Email</label>
                             <input type="email" name="email" id="email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('email') border-red-300 @enderror" value="{{ old('email', $user->email) }}">
                             @error('email')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-4">
+                            <label for="nisn" class="block text-sm font-medium text-gray-700">NISN <span id="nisn-required" class="text-red-500">*</span></label>
+                            <input type="text" name="nisn" id="nisn" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('nisn') border-red-300 @enderror" value="{{ old('nisn', $user->nisn) }}">
+                            <p class="mt-1 text-xs text-gray-500">Wajib untuk role User (siswa).</p>
+                            @error('nisn')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
@@ -65,3 +76,28 @@
 </div>
 @endsection
 
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const roleSelect = document.getElementById('role');
+        const nisnInput = document.getElementById('nisn');
+        const nisnRequired = document.getElementById('nisn-required');
+
+        function toggleNisnRequirement() {
+            if (roleSelect.value === 'user') {
+                nisnInput.setAttribute('required', 'required');
+                nisnRequired.style.display = 'inline';
+            } else {
+                nisnInput.removeAttribute('required');
+                nisnRequired.style.display = 'none';
+            }
+        }
+
+        // Initial check
+        toggleNisnRequirement();
+
+        // Update on role change
+        roleSelect.addEventListener('change', toggleNisnRequirement);
+    });
+</script>
+@endsection

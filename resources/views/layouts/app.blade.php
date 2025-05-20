@@ -24,7 +24,7 @@
         body {
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
-            background-color: #f7fafc; /* Ganti bg-gray-100 dengan warna lebih soft */
+            background-color: #f7fafc;
         }
         .sidebar-gradient {
             background: linear-gradient(180deg, #1e40af, #1e3a8a);
@@ -41,16 +41,16 @@
             align-items: center;
             padding: 0.75rem 1rem;
             color: #ffffff;
-            font-weight: 600; /* Sedikit lebih tebal untuk kesan modern */
-            border-radius: 0.5rem; /* Radius sedikit lebih besar */
+            font-weight: 600;
+            border-radius: 0.5rem;
             transition: all 0.3s ease;
         }
         .nav-link-sidebar:hover {
-            background: rgba(255, 255, 255, 0.15); /* Opacity lebih tinggi untuk kontras */
+            background: rgba(255, 255, 255, 0.15);
             padding-left: 1.5rem;
         }
         .nav-link-sidebar.active {
-            background: rgba(255, 255, 255, 0.2); /* Styling untuk link aktif */
+            background: rgba(255, 255, 255, 0.2);
         }
         .nav-link-sub {
             display: block;
@@ -63,21 +63,18 @@
         .nav-link-sub:hover {
             color: #ffffff;
             padding-left: 1.25rem;
-            background: rgba(255, 255, 255, 0.05); /* Efek hover lebih halus */
+            background: rgba(255, 255, 255, 0.05);
         }
-        /* Topbar */
         header {
             background: #ffffff;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Bayangan lebih lembut */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
-        /* Dropdown Profile */
         .profile-dropdown {
             animation: slideDown 0.3s ease-in-out;
         }
-        /* Footer */
         footer {
             background: #ffffff;
-            box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.05); /* Bayangan dalam lebih halus */
+            box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.05);
         }
     </style>
 
@@ -106,6 +103,7 @@
                         <li><a href="{{ url('user/permission') }}" class="nav-link-sidebar {{ request()->is('user/permission') ? 'active' : '' }}"><i class="fas fa-file-alt mr-2"></i> Izin</a></li>
                     @elseif (auth()->user()->role == 'guru')
                         <li><a href="{{ url('guru/dashboard') }}" class="nav-link-sidebar {{ request()->is('guru/dashboard') ? 'active' : '' }}"><i class="fas fa-tachometer-alt mr-2"></i> Dashboard</a></li>
+                        <li><a href="{{ route('guru.manual_attendance') }}" class="nav-link-sidebar {{ request()->is('guru/manual-attendance') ? 'active' : '' }}"><i class="fas fa-user-check mr-2"></i>Absensi Manual</a></li>
                         <li><a href="{{ url('guru/report') }}" class="nav-link-sidebar {{ request()->is('guru/report') ? 'active' : '' }}"><i class="fas fa-chart-bar mr-2"></i> Laporan Absensi</a></li>
                         <li><a href="{{ url('guru/permissions') }}" class="nav-link-sidebar {{ request()->is('guru/permissions') ? 'active' : '' }}"><i class="fas fa-check-square mr-2"></i> Validasi Izin</a></li>
                     @elseif (auth()->user()->role == 'admin')
