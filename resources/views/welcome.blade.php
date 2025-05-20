@@ -211,7 +211,7 @@
 <body class="flex flex-col min-h-screen bg-gray-50 text-gray-700">
     <!-- Progress Bar -->
     <div class="progress-bar"></div>
-    
+
     <!-- Preloader -->
     <div class="loader fixed inset-0 bg-white flex justify-center items-center z-50 transition-opacity duration-500">
         <div class="flex flex-col items-center">
@@ -406,20 +406,20 @@
                 <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mt-2">Projek</h2>
                 <div class="w-20 h-1.5 bg-[#6366f1] rounded-full mx-auto mt-4"></div>
             </div>
-    
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 @forelse ($projects as $project)
                     @php
                         $descId = 'desc-' . $loop->iteration;
                     @endphp
-    
+
                     <div class="card overflow-hidden hover:-translate-y-2 transition-all duration-500" data-aos="fade-up" data-aos-delay="{{ $loop->iteration * 100 }}">
                         <div class="h-56 overflow-hidden">
                             <img src="{{ $project->image_path ? Storage::url($project->image_path) : 'https://via.placeholder.com/600x400' }}" alt="{{ $project->title }}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
                         </div>
                         <div class="p-6">
                             <h5 class="text-xl font-bold text-gray-800 mb-3">{{ $project->title }}</h5>
-    
+
                             <p class="text-gray-600 mb-4">
                                 {{ \Illuminate\Support\Str::limit($project->description, 100) }}
                                 @if(strlen($project->description) > 100)
@@ -428,7 +428,7 @@
                                     <button onclick="toggleDesc('{{ $descId }}')" class="text-[#6366f1] hover:underline text-sm ml-1" id="{{ $descId }}-btn">Lihat Selengkapnya</button>
                                 @endif
                             </p>
-    
+
                             <div class="flex flex-wrap gap-2 mb-6">
                                 @foreach (explode(',', $project->technologies) as $tech)
                                     <span class="bg-[#6366f1]/10 text-[#6366f1] px-3 py-1 rounded-full text-sm font-medium">{{ trim($tech) }}</span>
@@ -461,7 +461,7 @@
                     </div>
                 @endforelse
             </div>
-    
+
             <div class="text-center mt-12" data-aos="fade-up" data-aos-delay="400">
                 <a href="#" class="custom-btn bg-[#6366f1] text-white px-8 py-4 rounded-full font-semibold hover:bg-[#4f46e5] transition-all duration-300 inline-flex items-center">
                     <i class="bi bi-folder2-open mr-2"></i>
