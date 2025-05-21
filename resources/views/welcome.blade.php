@@ -9,11 +9,15 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     @vite('resources/js/app.js','resources/css/app.css')
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playwrite+Danmark+Loopet&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             line-height: 1.6;
+        }
+        .class-logo {
+            font-family: 'Playwrite Danmark Loopet', cursive;
         }
         .hero-section {
             background: linear-gradient(135deg, rgba(99, 101, 241, 0.664), rgba(168, 85, 247, 0.664)),
@@ -224,7 +228,7 @@
     <!-- Navbar -->
     <nav class="navbar">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="/" class="text-2xl md:text-2xl font-bold text-black flex items-center">
+            <a href="/" class="class-logo text-2xl md:text-2xl font-bold text-black flex items-center">
                 <i class="bi bi-mortarboard-fill mr-2"></i>XI RPL 2
             </a>
             <button class="navbar-toggler md:hidden bg-white/20 text-white w-10 h-10 flex items-center justify-center rounded-full focus:outline-none backdrop-blur-md z-50" onclick="toggleMenu()">
@@ -817,3 +821,4 @@
     <script src="//unpkg.com/alpinejs" defer></script>
 </body>
 </html>
+

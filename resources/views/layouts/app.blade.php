@@ -82,7 +82,7 @@
 </head>
 <body class="min-h-screen flex">
     <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 w-64 sidebar-gradient text-white transform transition-transform duration-300 ease-in-out z-20 shadow-lg"
+    <div style="z-index: 999999;" class="fixed inset-y-0 left-0 w-64 sidebar-gradient text-white transform transition-transform duration-300 ease-in-out z-20 shadow-lg"
          :class="{ '-translate-x-full': !sidebarOpen }"
          x-cloak>
         <div class="p-5 flex items-center justify-between border-b border-blue-800/50">
@@ -157,7 +157,7 @@
     <!-- Main Content -->
     <div class="flex-1 w-full transition-all duration-300" :class="{ 'lg:ml-64': sidebarOpen }">
         <!-- Topbar -->
-        <header class="bg-white shadow-md px-4 py-4 flex items-center justify-between sticky top-0 z-10 w-full box-border">
+        <header style="z-index: 999999;" class="bg-white shadow-md px-4 py-4 flex items-center justify-between sticky top-0 z-10 w-full box-border">
             <div class="flex items-center space-x-4">
                 <button class="text-[#1e40af] hover:text-[#1e3a8a] transition-colors duration-300" @click="sidebarOpen = !sidebarOpen">
                     <i class="fas text-lg" :class="sidebarOpen ? 'fa-times' : 'fa-bars'"></i>

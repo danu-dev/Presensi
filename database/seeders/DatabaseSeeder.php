@@ -9,21 +9,48 @@ class DatabaseSeeder extends Seeder
 {
     public function run()
     {
-        // Insert users (1 admin, 1 guru, 50 students)
+        // Insert users (1 admin, 1 guru, 10 students)
         DB::table('users')->insert([
-            ['name' => 'Admin 1', 'email' => 'admin1@example.com', 'password' => bcrypt('password'), 'role' => 'admin', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Guru 1', 'email' => 'guru1@example.com', 'password' => bcrypt('password'), 'role' => 'guru', 'created_at' => now(), 'updated_at' => now()],
+            [
+                'name' => 'Admin 1',
+                'email' => 'admin1@example.com',
+                'password' => bcrypt('password'),
+                'role' => 'admin',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'Guru 1',
+                'email' => 'guru1@example.com',
+                'password' => bcrypt('password'),
+                'role' => 'guru',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
 
-        // Insert 50 students
+        $names = [
+            "M.Fahrur Rozi",
+            "Moch Bayu Ardiansyah",
+            "Mohammad Afdanu Aprilian Saputra",
+            "Nabila Zahrotul Amalia",
+            "Radittya Ardiansyah",
+            "Rizky Annisa Mutiara",
+            "Redhita Virginia Candra",
+            "Vera Amelia",
+            "Wildatul Lailiyah",
+            "Winanda Aprilia Putri"
+        ];
+
         $students = [];
-        for ($i = 1; $i <= 50; $i++) {
+        foreach ($names as $index => $name) {
+            $email = strtolower(str_replace([' ', '.'], '_', $name)) . '@example.com';
             $students[] = [
-                'name' => "Siswa $i",
-                'email' => "siswa$i@example.com",
+                'name' => $name,
+                'email' => $email,
                 'password' => bcrypt('password'),
                 'role' => 'user',
-                'nisn'=>"123458910$i",
+                'nisn' => '12345891' . ($index + 1),
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
@@ -32,32 +59,59 @@ class DatabaseSeeder extends Seeder
 
         // Insert locations
         DB::table('locations')->insert([
-            ['name' => 'Kelas A', 'latitude' => -8.2088, 'longitude' => 106.8456, 'radius' => 5000, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Kelas B', 'latitude' => -6.2090, 'longitude' => 106.8460, 'radius' => 1000, 'created_at' => now(), 'updated_at' => now()],
+            [
+                'name' => 'Xl RPL 2',
+                'latitude' => -8.15627,
+                'longitude' => 113.43497,
+                'radius' => 10,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'JURUSAN',
+                'latitude' => -8.15530,
+                'longitude' => 113.438508,
+                'radius' => 10,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
 
         // Insert rooms
         DB::table('rooms')->insert([
-            ['name' => 'Ruang 10A', 'guru_id' => 2, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Ruang 10B', 'guru_id' => 2, 'created_at' => now(), 'updated_at' => now()],
+            [
+                'name' => 'TEORI 9',
+                'guru_id' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'JURUSAN',
+                'guru_id' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
 
-        // Insert attendance records for each student in both rooms
+        // Insert attendance records for each student
+        $studentIds = DB::table('users')->where('role', 'user')->pluck('id')->toArray();
         $attendances = [];
-        for ($userId = 3; $userId <= 52; $userId++) {
+        foreach ($studentIds as $userId) {
+            // First attendance record
             $attendances[] = [
                 'user_id' => $userId,
-                'location_id' => 1,
-                'room_id' => 1,
+                'location_id' => rand(1, 2),
+                'room_id' => rand(1, 2),
                 'check_in' => now()->subDays(rand(0, 5)),
                 'status' => 'pending',
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
+            // Second attendance record
             $attendances[] = [
                 'user_id' => $userId,
-                'location_id' => 2,
-                'room_id' => 2,
+                'location_id' => rand(1, 2),
+                'room_id' => rand(1, 2),
                 'check_in' => now()->subDays(rand(0, 5)),
                 'status' => 'pending',
                 'created_at' => now(),
