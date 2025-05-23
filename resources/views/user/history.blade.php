@@ -28,7 +28,7 @@
                             @if ($attendance->check_out)
                                 <span class="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">Selesai</span>
                             @else
-                                <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">Belum Check-Out</span>
+                                <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">Belum Absen Keluar</span>
                             @endif
                             <i class="bi bi-chevron-down text-gray-500 transition-transform duration-300" :class="{ 'rotate-180': open }"></i>
                         </div>
@@ -46,11 +46,11 @@
                                 <p class="text-gray-800">{{ $attendance->room->name }}</p>
                             </div>
                             <div>
-                                <p class="text-gray-600 font-medium">Check-In:</p>
+                                <p class="text-gray-600 font-medium">Absen Masuk:</p>
                                 <p class="text-gray-800">{{ $attendance->check_in->format('H:i') }}</p>
                             </div>
                             <div>
-                                <p class="text-gray-600 font-medium">Check-Out:</p>
+                                <p class="text-gray-600 font-medium">Absen Keluar:</p>
                                 <p class="text-gray-800">
                                     @if ($attendance->check_out)
                                         {{ $attendance->check_out->format('H:i') }}

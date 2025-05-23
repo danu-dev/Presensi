@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ProjectController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:admin']); // Ubah ke role:admin agar hanya admin yang bisa akses
+        $this->middleware(['auth', 'role:admin']);
     }
 
     public function index()
@@ -27,24 +28,38 @@ class ProjectController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'description' => 'required|string',
-            'team_name' => 'required|string|max:255',
-            'technologies' => 'required|string',
+            'projects' => 'required|array|min:1',
+            'projects.*.title' => 'required|string|max:255',
+            'projects.*.image' => 'nullable',
+            'projects.*.description' => 'required|string',
+            'projects.*.team_name' => 'required|string|max:255',
+            'projects.*.technologies' => 'required|string|max:255',
         ]);
 
-        $imagePath = $request->file('image') ? $request->file('image')->store('projects', 'public') : null;
+        DB::beginTransaction();
+        try {
+            foreach ($request->projects as $projectData) {
+                $imagePath = null;
+                if (isset($projectData['image']) && $projectData['image'] instanceof \Illuminate\Http\UploadedFile) {
+                    $imagePath = $projectData['image']->store('projects', 'public');
+                }
 
-        Project::create([
-            'title' => $request->title,
-            'image_path' => $imagePath,
-            'description' => $request->description,
-            'team_name' => $request->team_name,
-            'technologies' => $request->technologies,
-        ]);
+                Project::create([
+                    'title' => $projectData['title'],
+                    'image_path' => $imagePath,
+                    'description' => $projectData['description'],
+                    'team_name' => $projectData['team_name'],
+                    'technologies' => $projectData['technologies'],
+                ]);
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // Optionally log the error: \Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyimpan proyek. Silakan coba lagi.');
+        }
 
-        return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil diunggah!');
+        return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil ditambahkan!');
     }
 
     public function edit(Project $project)
@@ -56,16 +71,15 @@ class ProjectController extends Controller
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'image' => 'nullable',
             'description' => 'required|string',
             'team_name' => 'required|string|max:255',
-            'technologies' => 'required|string',
+            'technologies' => 'required|string|max:255',
         ]);
 
-        $data = $request->all();
+        $data = $request->only(['title', 'description', 'team_name', 'technologies']);
 
         if ($request->hasFile('image')) {
-            // Hapus gambar lama jika ada
             if ($project->image_path) {
                 Storage::disk('public')->delete($project->image_path);
             }
@@ -79,11 +93,9 @@ class ProjectController extends Controller
 
     public function destroy(Project $project)
     {
-        // Hapus gambar dari storage jika ada
         if ($project->image_path) {
             Storage::disk('public')->delete($project->image_path);
         }
-
         $project->delete();
 
         return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil dihapus!');

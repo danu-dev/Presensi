@@ -253,6 +253,22 @@
                 <div class="mt-8 md:hidden">
                     <a href="#contact" class="bg-[#6366f1] text-white px-6 py-3 rounded-full font-medium hover:bg-[#4f46e5] transition-all duration-300 inline-block">Hubungi Kami</a>
                 </div>
+                <!-- Login/Logout -->
+                @auth
+                @if (Auth::user()->role === 'user')
+                <a href="{{ route('user.dashboard') }}" class="nav-link block md:inline-block py-3 md:py-0 text-gray-800 md:text-white hover:text-[#6366f1] transition-colors duration-300">Dashboard</a>
+            @elseif (Auth::user()->role === 'guru')
+                <a href="{{ route('guru.dashboard') }}" class="nav-link block md:inline-block py-3 md:py-0 text-gray-800 md:text-white hover:text-[#6366f1] transition-colors duration-300">Dashboard</a>
+            @elseif (Auth::user()->role === 'admin')
+                <a href="{{ route('admin.dashboard') }}" class="nav-link block md:inline-block py-3 md:py-0 text-gray-800 md:text-white hover:text-[#6366f1] transition-colors duration-300">Dashboard</a>
+            @endif
+                @else
+                    <div class="mt-8 md:mt-0 md:ml-4">
+                        <a href="{{ route('login') }}" class="custom-btn bg-[#6366f1] text-white px-6 py-3 rounded-full font-medium hover:bg-[#4f46e5] transition-all duration-300 inline-flex items-center">
+                            <i class="bi bi-box-arrow-in-right mr-2"></i> Login
+                        </a>
+                    </div>
+                @endauth
             </div>
         </div>
     </nav>

@@ -10,7 +10,7 @@ class StudentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:admin']); // Ubah ke role:admin agar hanya admin yang bisa akses
+        $this->middleware(['auth', 'role:admin']);
     }
 
     public function index()
@@ -27,24 +27,30 @@ class StudentController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'role' => 'required|string|max:255',
-            'github_url' => 'nullable|url',
-            'linkedin_url' => 'nullable|url',
-            'instagram_url' => 'nullable|url',
+            'students' => 'required|array|min:1',
+            'students.*.name' => 'required|string|max:255',
+            'students.*.image' => 'nullable|image|mimes:jpeg,png,jpg',
+            'students.*.role' => 'required|string|max:255',
+            'students.*.github_url' => 'nullable|url',
+            'students.*.linkedin_url' => 'nullable|url',
+            'students.*.instagram_url' => 'nullable|url',
         ]);
 
-        $imagePath = $request->file('image') ? $request->file('image')->store('students', 'public') : null;
+        foreach ($request->students as $studentData) {
+            $imagePath = null;
+            if (isset($studentData['image']) && $studentData['image'] instanceof \Illuminate\Http\UploadedFile) {
+                $imagePath = $studentData['image']->store('students', 'public');
+            }
 
-        Student::create([
-            'name' => $request->name,
-            'image_path' => $imagePath,
-            'role' => $request->role,
-            'github_url' => $request->github_url,
-            'linkedin_url' => $request->linkedin_url,
-            'instagram_url' => $request->instagram_url,
-        ]);
+            Student::create([
+                'name' => $studentData['name'],
+                'image_path' => $imagePath,
+                'role' => $studentData['role'],
+                'github_url' => $studentData['github_url'] ?? null,
+                'linkedin_url' => $studentData['linkedin_url'] ?? null,
+                'instagram_url' => $studentData['instagram_url'] ?? null,
+            ]);
+        }
 
         return redirect()->route('admin.students.index')->with('success', 'Siswa berhasil ditambahkan!');
     }
@@ -58,7 +64,7 @@ class StudentController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg',
             'role' => 'required|string|max:255',
             'github_url' => 'nullable|url',
             'linkedin_url' => 'nullable|url',
@@ -68,7 +74,6 @@ class StudentController extends Controller
         $data = $request->all();
 
         if ($request->hasFile('image')) {
-            // Hapus gambar lama jika ada
             if ($student->image_path) {
                 Storage::disk('public')->delete($student->image_path);
             }
@@ -82,7 +87,6 @@ class StudentController extends Controller
 
     public function destroy(Student $student)
     {
-        // Hapus gambar dari storage jika ada
         if ($student->image_path) {
             Storage::disk('public')->delete($student->image_path);
         }

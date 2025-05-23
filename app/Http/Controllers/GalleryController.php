@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Gallery;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class GalleryController extends Controller
@@ -27,18 +28,29 @@ class GalleryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'nullable|string|max:255',
-            'image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'description' => 'nullable|string',
+            'gallery' => 'required|array|min:1',
+            'gallery.*.title' => 'nullable|string|max:255',
+            'gallery.*.image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'gallery.*.description' => 'nullable|string',
         ]);
 
-        $imagePath = $request->file('image')->store('galleries', 'public');
+        DB::beginTransaction();
+        try {
+            foreach ($request->gallery as $galleryData) {
+                $imagePath = $galleryData['image']->store('galleries', 'public');
 
-        Gallery::create([
-            'title' => $request->title,
-            'image_path' => $imagePath,
-            'description' => $request->description,
-        ]);
+                Gallery::create([
+                    'title' => $galleryData['title'] ?? null,
+                    'image_path' => $imagePath,
+                    'description' => $galleryData['description'] ?? null,
+                ]);
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // Optionally log the error: \Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyimpan galeri. Silakan coba lagi.');
+        }
 
         return redirect()->route('admin.gallery.index')->with('success', 'Galeri berhasil diunggah!');
     }
@@ -57,9 +69,10 @@ class GalleryController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('galleries', 'public');
-            Storage::delete($gallery->image_path);
-            $gallery->image_path = $imagePath;
+            if ($gallery->image_path) {
+                Storage::disk('public')->delete($gallery->image_path);
+            }
+            $gallery->image_path = $request->file('image')->store('galleries', 'public');
         }
 
         $gallery->title = $request->title;
@@ -71,10 +84,11 @@ class GalleryController extends Controller
 
     public function destroy(Gallery $gallery)
     {
-        Storage::delete($gallery->image_path);
+        if ($gallery->image_path) {
+            Storage::disk('public')->delete($gallery->image_path);
+        }
         $gallery->delete();
 
         return redirect()->route('admin.gallery.index')->with('success', 'Galeri berhasil dihapus!');
     }
-
 }
