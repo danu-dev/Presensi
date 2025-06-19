@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Exports\AttendanceExport;
@@ -6,8 +7,11 @@ use App\Models\Attendance;
 use App\Models\Permission;
 use App\Models\Room;
 use App\Models\User;
+use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class GuruController extends Controller
 {
@@ -21,6 +25,7 @@ class GuruController extends Controller
                 'pendingPermissions' => 0,
                 'todayStats'         => ['present' => 0, 'permission' => 0, 'absent' => 0],
                 'weeklyData'         => [],
+                'announcements'      => collect(),
             ]);
         }
 
@@ -74,7 +79,10 @@ class GuruController extends Controller
         // Count pending permissions
         $pendingPermissions = Permission::whereNull('status')->count();
 
-        return view('guru.dashboard', compact('rooms', 'pendingPermissions', 'todayStats', 'weeklyData'));
+        // Get active announcements created by this teacher
+        $announcements = Announcement::active()->where('created_by', auth()->id())->latest()->get();
+
+        return view('guru.dashboard', compact('rooms', 'pendingPermissions', 'todayStats', 'weeklyData', 'announcements'));
     }
 
     public function report(Request $request)
@@ -191,7 +199,7 @@ class GuruController extends Controller
 
         $date = $request->date;
 
-                                               // Map room_id to location_id (based on seeder)
+        // Map room_id to location_id (based on seeder)
         $locationId = $room->id === 1 ? 1 : 2; // Ruang 10A -> Kelas A, Ruang 10B -> Kelas B
 
         foreach ($request->attendances as $userId => $status) {
@@ -258,5 +266,123 @@ class GuruController extends Controller
         })->get();
 
         return response()->json($students);
+    }
+
+    // Announcement Methods
+    public function announcements()
+    {
+        $announcements = Announcement::with(['creator', 'room'])
+            ->where('created_by', Auth::id())
+            ->latest()
+            ->paginate(10);
+
+        // Calculate active and expired counts
+        $activeCount = Announcement::where('created_by', Auth::id())
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>=', now());
+            })
+            ->count();
+
+        $expiredCount = Announcement::where('created_by', Auth::id())
+            ->where('expires_at', '<', now())
+            ->count();
+
+        return view('guru.announcements.index', compact('announcements', 'activeCount', 'expiredCount'));
+    }
+
+    public function createAnnouncement()
+    {
+        $rooms = Room::all();
+        return view('guru.announcements.create', compact('rooms'));
+    }
+
+    public function storeAnnouncement(Request $request)
+    {
+        try {
+            $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'required|string',
+                'urgency' => 'required|in:low,medium,high',
+                'expires_at' => 'nullable|date|after_or_equal:today',
+                'room_id' => 'nullable|exists:rooms,id',
+            ], [
+                'title.required' => 'Judul pengumuman harus diisi.',
+                'description.required' => 'Isi pengumuman harus diisi.',
+                'urgency.required' => 'Tingkat urgensi harus dipilih.',
+                'expires_at.after_or_equal' => 'Tanggal kadaluarsa tidak boleh sebelum hari ini.',
+                'room_id.exists' => 'Ruangan yang dipilih tidak valid.',
+            ]);
+
+            Announcement::create([
+                'title' => $request->title,
+                'description' => $request->description,
+                'urgency' => $request->urgency,
+                'expires_at' => $request->expires_at,
+                'room_id' => $request->room_id,
+                'created_by' => Auth::id(),
+            ]);
+
+            return redirect()->route('guru.announcements.index')->with('success', 'Pengumuman berhasil dibuat.');
+        } catch (\Exception $e) {
+            Log::error('Failed to create announcement:', ['error' => $e->getMessage()]);
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan pengumuman.');
+        }
+    }
+
+    public function editAnnouncement(Announcement $announcement)
+    {
+        if ($announcement->created_by != Auth::id()) {
+            return back()->with('error', 'Unauthorized action.');
+        }
+
+        $rooms = Room::all();
+        return view('guru.announcements.edit', compact('announcement', 'rooms'));
+    }
+
+    public function updateAnnouncement(Request $request, Announcement $announcement)
+    {
+        try {
+            if ($announcement->created_by != Auth::id()) {
+                return back()->with('error', 'Unauthorized action.');
+            }
+
+            $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'required|string',
+                'urgency' => 'required|in:low,medium,high',
+                'expires_at' => 'nullable|date|after_or_equal:today',
+                'room_id' => 'nullable|exists:rooms,id',
+            ], [
+                'title.required' => 'Judul pengumuman harus diisi.',
+                'description.required' => 'Isi pengumuman harus diisi.',
+                'urgency.required' => 'Tingkat urgensi harus dipilih.',
+                'expires_at.after_or_equal' => 'Tanggal kadaluarsa tidak boleh sebelum hari ini.',
+                'room_id.exists' => 'Ruangan yang dipilih tidak valid.',
+            ]);
+
+            $announcement->update([
+                'title' => $request->title,
+                'description' => $request->description,
+                'urgency' => $request->urgency,
+                'expires_at' => $request->expires_at,
+                'room_id' => $request->room_id,
+            ]);
+
+            return redirect()->route('guru.announcements.index')->with('success', 'Pengumuman berhasil diperbarui.');
+        } catch (\Exception $e) {
+            Log::error('Failed to update announcement:', ['error' => $e->getMessage()]);
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui pengumuman.');
+        }
+    }
+
+    public function destroyAnnouncement(Announcement $announcement)
+    {
+        if ($announcement->created_by != Auth::id()) {
+            return back()->with('error', 'Unauthorized action.');
+        }
+
+        $announcement->delete();
+        return redirect()->route('guru.announcements.index')->with('success', 'Pengumuman berhasil dihapus.');
     }
 }

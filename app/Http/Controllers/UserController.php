@@ -6,6 +6,7 @@ use App\Models\Room;
 use App\Models\Location;
 use App\Models\Attendance;
 use App\Models\Permission;
+use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -16,30 +17,64 @@ class UserController extends Controller
     {
         $user = Auth::user();
 
-        $attendances = $user->attendances()
-            ->with(['location', 'room'])
+        // Fetch rooms associated with the student via attendance
+        $roomIds = Attendance::where('user_id', $user->id)
+            ->distinct('room_id')
+            ->pluck('room_id');
+
+        // Fetch active announcements
+        $announcements = Announcement::with(['creator', 'room'])
+            ->where(function ($query) use ($roomIds) {
+                $query->whereIn('room_id', $roomIds)
+                      ->orWhereNull('room_id'); // Global announcements
+            })
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>=', now()->startOfDay());
+            })
             ->latest()
+            ->get();
+
+        // Fetch recent attendance records (last 5)
+        $attendances = Attendance::where('user_id', $user->id)
+            ->with(['location', 'room'])
+            ->orderBy('check_in', 'desc')
             ->take(5)
             ->get();
 
+        // Fetch attendance records for the current week
+        $startOfWeek = now()->startOfWeek();
+        $endOfWeek = now()->endOfWeek();
+        $attendanceRecords = Attendance::where('user_id', $user->id)
+            ->whereBetween('check_in', [$startOfWeek, $endOfWeek])
+            ->get()
+            ->keyBy(function ($item) {
+                return $item->check_in->format('Y-m-d');
+            })
+            ->map(function ($item) {
+                if ($item->check_in && $item->check_out) {
+                    return 'Sudah Absen Keluar';
+                } elseif ($item->check_in) {
+                    return 'partial';
+                }
+                return 'absent';
+            });
+
+        // Calculate monthly stats
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
         $stats = [
-            'present' => $user->attendances()
-                ->whereMonth('check_in', now()->month)
-                ->whereNotNull('check_out')
+            'present' => Attendance::where('user_id', $user->id)
+                ->whereBetween('check_in', [$startOfMonth, $endOfMonth])
+                ->whereNotNull('check_in')
                 ->count(),
-            'permission' => $user->permissions()
-                ->whereMonth('date', now()->month)
+            'permission' => Permission::where('user_id', $user->id)
+                ->where('status', 'approved')
+                ->whereBetween('date', [$startOfMonth, $endOfMonth])
                 ->count(),
         ];
 
-        $attendanceRecords = $user->attendances()
-            ->whereBetween('check_in', [now()->startOfWeek(), now()->endOfWeek()])
-            ->pluck('status', 'check_in')
-            ->mapWithKeys(function ($status, $date) {
-                return [date('Y-m-d', strtotime($date)) => $status];
-            })->toArray();
-
-        return view('user.dashboard', compact('attendances', 'stats', 'attendanceRecords'));
+        return view('user.dashboard', compact('announcements', 'attendances', 'attendanceRecords', 'stats'));
     }
 
     public function attendanceForm()

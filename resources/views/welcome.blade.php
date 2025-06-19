@@ -218,7 +218,7 @@
     <div class="progress-bar"></div>
 
     <!-- Preloader -->
-    <div class="loader fixed inset-0 bg-white flex justify-center items-center z-50 transition-opacity duration-500">
+ <div class="loader fixed inset-0 bg-white flex justify-center items-center z-50 transition-opacity duration-500">
         <div class="flex flex-col items-center">
             <div class="spinner w-16 h-16 border-4 border-[#6366f1] border-t-transparent rounded-full"></div>
             <p class="mt-4 text-[#6366f1] font-medium animate-pulse">Loading...</p>
@@ -837,4 +837,3 @@
     <script src="//unpkg.com/alpinejs" defer></script>
 </body>
 </html>
-

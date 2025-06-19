@@ -24,9 +24,9 @@ Route::get('/', function () {
 // Auth Routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
-//  Route::get('/register', [AuthController::class, 'showRegister']);
-// Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'register']);
 
 // User Routes
 Route::middleware(['auth', 'role:user'])->prefix('user')->group(function () {
@@ -46,13 +46,17 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->group(function () {
     Route::get('/permissions', [GuruController::class, 'permissions'])->name('guru.permissions');
     Route::post('/validate-permission/{id}', [GuruController::class, 'validatePermission'])->name('guru.validate.permission');
     Route::get('/permission/{id}', [GuruController::class, 'show'])->name('guru.permission.show');
-    Route::get('/manual-attendance', [App\Http\Controllers\GuruController::class, 'manualAttendance'])->name('guru.manual_attendance');
-Route::post('/manual-attendance', [App\Http\Controllers\GuruController::class, 'manualAttendance']);
-Route::get('/students/{room_id}', [App\Http\Controllers\GuruController::class, 'getStudentsByRoom'])->name('get.students');
-Route::get('/manual-attendance', [GuruController::class, 'manualAttendance'])->name('guru.manual_attendance');
-Route::post('/manual-attendance', [GuruController::class, 'submitManualAttendance']);
-Route::get('/students/{room_id}', [GuruController::class, 'getStudentsByRoom'])->name('get.students');
+    Route::get('/manual-attendance', [GuruController::class, 'manualAttendance'])->name('guru.manual_attendance');
+    Route::post('/manual-attendance', [GuruController::class, 'submitManualAttendance']);
+    Route::get('/students/{room_id}', [GuruController::class, 'getStudentsByRoom'])->name('get.students');
 
+    // Announcement Routes
+    Route::get('/announcements', [GuruController::class, 'announcements'])->name('guru.announcements.index');
+    Route::get('/announcements/create', [GuruController::class, 'createAnnouncement'])->name('guru.announcements.create');
+    Route::post('/announcements', [GuruController::class, 'storeAnnouncement'])->name('guru.announcements.store');
+    Route::get('/announcements/{announcement}/edit', [GuruController::class, 'editAnnouncement'])->name('guru.announcements.edit');
+    Route::put('/announcements/{announcement}', [GuruController::class, 'updateAnnouncement'])->name('guru.announcements.update');
+    Route::delete('/announcements/{announcement}', [GuruController::class, 'destroyAnnouncement'])->name('guru.announcements.destroy');
 });
 
 // Admin Routes
@@ -130,4 +134,5 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
 });

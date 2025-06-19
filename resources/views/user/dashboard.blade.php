@@ -62,8 +62,7 @@
                                 $dateKey = $day->format('Y-m-d');
                                 $status = $attendanceRecords[$dateKey] ?? 'absent';
 
-                                // Determine status class and icon
-                                if ($status == 'present') {
+                                if ($status == 'Sudah Absen Keluar') {
                                     $statusClass = 'bg-gradient-to-br from-green-400 to-green-500';
                                     $statusIcon = 'fa-check';
                                     $tooltip = 'Hadir';
@@ -71,17 +70,12 @@
                                     $statusClass = 'bg-gradient-to-br from-yellow-400 to-yellow-500';
                                     $statusIcon = 'fa-hourglass-half';
                                     $tooltip = 'Check-in';
-                                } elseif (isset($attendanceRecords[$dateKey])) {
-                                    $statusClass = 'bg-gradient-to-br from-red-400 to-red-500';
-                                    $statusIcon = 'fa-times';
-                                    $tooltip = 'Absen';
                                 } else {
                                     $statusClass = $day->isPast() ? 'bg-gradient-to-br from-red-400 to-red-500' : 'bg-gray-200';
                                     $statusIcon = $day->isPast() ? 'fa-times' : 'fa-clock';
                                     $tooltip = $day->isPast() ? 'Absen' : 'Belum waktunya';
                                 }
 
-                                // Today highlight
                                 $ringClass = $day->isToday() ? 'ring-4 ring-blue-300/50' : '';
                             @endphp
 
@@ -95,7 +89,6 @@
                                         <i class="fas {{ $statusIcon }} text-xs {{ $day->isPast() && !isset($attendanceRecords[$dateKey]) ? 'text-red-500' : 'text-white' }}"></i>
                                     </div>
 
-                                    <!-- Animated Tooltip -->
                                     <div x-show="showTooltip" x-transition:enter="transition ease-out duration-200"
                                         x-transition:enter-start="opacity-0 translate-y-1"
                                         x-transition:enter-end="opacity-100 translate-y-0"
@@ -268,41 +261,54 @@
                 <p class="text-sm text-gray-500 mt-1">Informasi terbaru untuk siswa</p>
             </div>
             <div class="p-5">
-                <div class="flex items-start mb-4 bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-100 group hover:border-blue-200 transition-colors">
-                    <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4 transition-transform group-hover:scale-110">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold text-blue-700 mb-1">Jadwal Ujian Tengah Semester</h4>
-                        <p class="text-blue-600 text-sm">Ujian Tengah Semester akan dilaksanakan dari tanggal 15-20 April 2025. Pastikan kehadiran minimum 80% untuk mengikuti ujian.</p>
-                        <div class="mt-2 flex items-center text-xs text-blue-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                @forelse ($announcements as $announcement)
+                    @php
+                        $bgGradient = $announcement->urgency == 'high' ? 'from-red-50 to-red-100' : ($announcement->urgency == 'medium' ? 'from-yellow-50 to-yellow-100' : 'from-blue-50 to-blue-100');
+                        $borderColor = $announcement->urgency == 'high' ? 'border-red-100 hover:border-red-200' : ($announcement->urgency == 'medium' ? 'border-yellow-100 hover:border-yellow-200' : 'border-blue-100 hover:border-blue-200');
+                        $iconColor = $announcement->urgency == 'high' ? 'text-red-500' : ($announcement->urgency == 'medium' ? 'text-yellow-500' : 'text-blue-500');
+                        $titleColor = $announcement->urgency == 'high' ? 'text-red-700' : ($announcement->urgency == 'medium' ? 'text-yellow-700' : 'text-blue-700');
+                        $textColor = $announcement->urgency == 'high' ? 'text-red-600' : ($announcement->urgency == 'medium' ? 'text-yellow-600' : 'text-blue-600');
+                    @endphp
+                    <div class="flex items-start mb-4 bg-gradient-to-r {{ $bgGradient }} p-4 rounded-xl border {{ $borderColor }} group transition-colors cursor-pointer"
+                         @click="$store.announcementModal.openModal({
+                             title: '{{ addslashes($announcement->title) }}',
+                             description: '{{ addslashes($announcement->description) }}',
+                             urgency: '{{ $announcement->urgency }}',
+                             creator: '{{ addslashes($announcement->creator->name) }}',
+                             created_at: '{{ $announcement->created_at->translatedFormat('d M Y') }}',
+                             expires_at: '{{ $announcement->expires_at ? $announcement->expires_at->translatedFormat('d M Y') : '' }}',
+                             room: '{{ $announcement->room ? addslashes($announcement->room->name) : 'Semua Ruangan' }}'
+                         })">
+                        <div class="flex-shrink-0 w-10 h-10 bg-{{ $announcement->urgency == 'high' ? 'red' : ($announcement->urgency == 'medium' ? 'yellow' : 'blue') }}-100 rounded-full flex items-center justify-center mr-4 transition-transform group-hover:scale-110">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 {{ $iconColor }}" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clip-rule="evenodd" />
                             </svg>
-                            Diposting 2 hari lalu
+                        </div>
+                        <div>
+                            <h4 class="font-semibold {{ $titleColor }} mb-1">{{ $announcement->title }}</h4>
+                            <p class="text-sm {{ $textColor }}">{{ Str::limit($announcement->description, 100) }}</p>
+                            <div class="mt-2 flex items-center text-xs {{ $textColor }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                                </svg>
+                                Diposting oleh {{ $announcement->creator->name }} pada {{ $announcement->created_at->translatedFormat('d M Y') }}
+                                @if($announcement->expires_at)
+                                    | Kadaluarsa: {{ $announcement->expires_at->translatedFormat('d M Y') }}
+                                @endif
+                                | Ruangan: {{ $announcement->room ? $announcement->room->name : 'Semua Ruangan' }}
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="flex items-start bg-gradient-to-r from-indigo-50 to-indigo-100 p-4 rounded-xl border border-indigo-100 group hover:border-indigo-200 transition-colors">
-                    <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-4 transition-transform group-hover:scale-110">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold text-indigo-700 mb-1">Perubahan Kebijakan Absensi</h4>
-                        <p class="text-indigo-600 text-sm">Mulai bulan depan, izin harus diajukan minimal 1 hari sebelumnya dengan bukti yang valid. Absen sebelum pukul 08:00 setiap hari.</p>
-                        <div class="mt-2 flex items-center text-xs text-indigo-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                @empty
+                    <div class="p-4 text-center">
+                        <div class="w-16 h-16 bg-blue-50 rounded-full mx-auto flex items-center justify-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            Diposting 1 minggu lalu
                         </div>
+                        <p class="text-gray-500">Tidak ada pengumuman saat ini.</p>
                     </div>
-                </div>
+                @endforelse
             </div>
         </div>
 
@@ -314,7 +320,7 @@
             </div>
             <div class="p-5">
                 <div class="space-y-4">
-                    <div class="flex items-center p-3 rounded-lg hover:bg-green-50/50 transition-colors groupserializable
+                    <div class="flex items-center p-3 rounded-lg hover:bg-green-50/50 transition-colors group">
                         <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3 transition-transform group-hover:scale-110">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
@@ -353,6 +359,47 @@
             </div>
         </div>
     </div>
+
+    <!-- Announcement Modal -->
+    <div x-data="announcementModal" x-show="isOpen" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+         @click.self="closeModal">
+        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 backdrop-blur-sm bg-opacity-95 border border-gray-100"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800" x-text="announcement.title"></h3>
+                <button @click="closeModal" class="text-gray-500 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div :class="{
+                'bg-red-50 border-red-200': announcement.urgency === 'high',
+                'bg-yellow-50 border-yellow-200': announcement.urgency === 'medium',
+                'bg-blue-50 border-blue-200': announcement.urgency === 'low'
+            }" class="p-4 rounded-xl border">
+                <p class="text-gray-700 mb-2" x-text="announcement.description"></p>
+                <div class="text-sm text-gray-600">
+                    <p><span class="font-medium">Urgensi:</span> <span x-text="announcement.urgency.charAt(0).toUpperCase() + announcement.urgency.slice(1)"></span></p>
+                    <p><span class="font-medium">Dibuat oleh:</span> <span x-text="announcement.creator"></span></p>
+                    <p><span class="font-medium">Tanggal Dibuat:</span> <span x-text="announcement.created_at"></span></p>
+                    <p><span class="font-medium">Ruangan:</span> <span x-text="announcement.room"></span></p>
+                    <p x-show="announcement.expires_at"><span class="font-medium">Kadaluarsa:</span> <span x-text="announcement.expires_at"></span></p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button @click="closeModal" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -361,9 +408,38 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        // Initialize Alpine.js store for announcement modal
+        Alpine.store('announcementModal', {
+            isOpen: false,
+            announcement: {
+                title: '',
+                description: '',
+                urgency: '',
+                creator: '',
+                created_at: '',
+                expires_at: '',
+                room: ''
+            },
+            openModal(data) {
+                this.announcement = data;
+                this.isOpen = true;
+            },
+            closeModal() {
+                this.isOpen = false;
+                this.announcement = {
+                    title: '',
+                    description: '',
+                    urgency: '',
+                    creator: '',
+                    created_at: '',
+                    expires_at: '',
+                    room: ''
+                };
+            }
+        });
 
-        // Generate labels for the last 7 days (including today)
+        // Chart.js for Attendance Trend
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
         const labels = [];
         for (let i = 6; i >= 0; i--) {
             const d = new Date();
@@ -371,32 +447,39 @@
             labels.push(d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
         }
 
-        // Process attendance data from backend
         const attendances = @json($attendances);
+        const permissions = @json(auth()->user()->permissions()
+            ->whereBetween('date', [now()->subDays(6)->startOfDay(), now()->endOfDay()])
+            ->get());
+
         const presentData = new Array(7).fill(0);
         const permissionData = new Array(7).fill(0);
-
-        // Filter attendances for the logged-in user and the last 7 days
         const userId = {{ auth()->id() }};
         const today = new Date('{{ now()->toDateString() }}');
         const startDate = new Date(today);
         startDate.setDate(today.getDate() - 6);
 
+        // Process attendance data
         attendances.forEach(attendance => {
             if (attendance.user_id === userId) {
                 const checkInDate = new Date(attendance.check_in);
                 if (checkInDate >= startDate && checkInDate <= today) {
                     const dayIndex = Math.floor((today - checkInDate) / (1000 * 60 * 60 * 24));
-                    if (attendance.status === 'present') {
+                    if (attendance.check_in && (attendance.check_out || attendance.status === 'Sudah Absen')) {
                         presentData[6 - dayIndex]++;
                     }
                 }
             }
         });
 
-        // Note: permissionData is set to zeros since no permission records are seeded
-        // If you have a permissions table, update this logic to count permissions
-        // Example: permissionData[6 - dayIndex]++ for permission records
+        // Process permission data
+        permissions.forEach(permission => {
+            const permissionDate = new Date(permission.date);
+            if (permissionDate >= startDate && permissionDate <= today && permission.status === 'approved') {
+                const dayIndex = Math.floor((today - permissionDate) / (1000 * 60 * 60 * 24));
+                permissionData[6 - dayIndex]++;
+            }
+        });
 
         const chart = new Chart(ctx, {
             type: 'line',

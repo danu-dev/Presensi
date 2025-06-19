@@ -1,102 +1,69 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\Project;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
-class ProjectController extends Controller
+class ProfileController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:admin']);
+        $this->middleware('auth');
     }
 
-    public function index()
+    /**
+     * Display the user's profile.
+     */
+    public function show()
     {
-        $projects = Project::all();
-        return view('admin.projects.index', compact('projects'));
+        $user = Auth::user();
+        return view('profile.show', compact('user'));
     }
 
-    public function create()
+    /**
+     * Show the form for editing the user's profile.
+     */
+    public function edit()
     {
-        return view('admin.projects.create');
+        $user = Auth::user();
+        return view('profile.edit', compact('user'));
     }
 
-    public function store(Request $request)
+    /**
+     * Update the user's profile.
+     */
+    public function update(Request $request)
     {
+        $user = Auth::user();
+
         $request->validate([
-            'projects'                => 'required|array|min:1',
-            'projects.*.title'        => 'required|string|max:255',
-            'projects.*.image'        => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'projects.*.description'  => 'required|string',
-            'projects.*.team_name'    => 'required|string|max:255',
-            'projects.*.technologies' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8|confirmed',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        DB::beginTransaction();
-        try {
-            foreach ($request->projects as $projectData) {
-                $imagePath = null;
-                if (isset($projectData['image']) && $projectData['image'] instanceof \Illuminate\Http\UploadedFile) {
-                    $imagePath = $projectData['image']->store('projects', 'public');
-                }
+        $data = [
+            'name' => $request->name,
+            'email' => $request->email,
+        ];
 
-                Project::create([
-                    'title'        => $projectData['title'],
-                    'image_path'   => $imagePath,
-                    'description'  => $projectData['description'],
-                    'team_name'    => $projectData['team_name'],
-                    'technologies' => $projectData['technologies'],
-                ]);
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        if ($request->hasFile('profile_photo')) {
+            if ($user->profile_photo) {
+                Storage::disk('public')->delete($user->profile_photo);
             }
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            // Optionally log the error: \Log::error($e->getMessage());
-            return redirect()->back()->with('error', 'Gagal menyimpan proyek. Silakan coba lagi.');
+            $data['profile_photo'] = $request->file('profile_photo')->store('profiles', 'public');
         }
 
-        return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil ditambahkan!');
-    }
+        $user->update($data);
 
-    public function edit(Project $project)
-    {
-        return view('admin.projects.edit', compact('project'));
-    }
-
-    public function update(Request $request, Project $project)
-    {
-        $request->validate([
-            'title'        => 'required|string|max:255',
-            'image'        => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'description'  => 'required|string',
-            'team_name'    => 'required|string|max:255',
-            'technologies' => 'required|string|max:255',
-        ]);
-
-        $data = $request->only(['title', 'description', 'team_name', 'technologies']);
-
-        if ($request->hasFile('image')) {
-            if ($project->image_path) {
-                Storage::disk('public')->delete($project->image_path);
-            }
-            $data['image_path'] = $request->file('image')->store('projects', 'public');
-        }
-
-        $project->update($data);
-
-        return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil diperbarui!');
-    }
-
-    public function destroy(Project $project)
-    {
-        if ($project->image_path) {
-            Storage::disk('public')->delete($project->image_path);
-        }
-        $project->delete();
-
-        return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil dihapus!');
+        return redirect()->route('profile.show')->with('success', 'Profil berhasil diperbarui!');
     }
 }

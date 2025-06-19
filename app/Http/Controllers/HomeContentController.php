@@ -31,7 +31,7 @@ class HomeContentController extends Controller
             'title' => 'required|string|max:255',
             'subtitle' => 'required|string|max:255',
             'description' => 'required|string',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image',
         ]);
 
         $data = $request->all();
@@ -55,7 +55,7 @@ class HomeContentController extends Controller
             'title' => 'required|string|max:255',
             'subtitle' => 'required|string|max:255',
             'description' => 'required|string',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image',
         ]);
 
         $data = $request->all();

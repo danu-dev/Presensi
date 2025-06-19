@@ -152,17 +152,14 @@
                         <a href="{{ url('guru/report') }}" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-lg shadow hover:shadow-lg transition-all flex items-center justify-center">
                             <i class="fas fa-file-export mr-2"></i> Ekspor Laporan Absensi
                         </a>
-
                         <a href="{{ url('guru/permissions') }}" class="bg-gradient-to-r from-indigo-400 to-indigo-500 text-white py-3 px-4 rounded-lg shadow hover:shadow-lg transition-all flex items-center justify-center">
                             <i class="fas fa-check-circle mr-2"></i> Validasi Izin Siswa
                         </a>
-
                         <a href="{{ url('guru/manual-attendance') }}" class="bg-gradient-to-r from-green-400 to-green-500 text-white py-3 px-4 rounded-lg shadow hover:shadow-lg transition-all flex items-center justify-center">
                             <i class="fas fa-user-check mr-2"></i> Absen Manual
                         </a>
-
-                        <a href="#" class="bg-gradient-to-r from-purple-400 to-purple-500 text-white py-3 px-4 rounded-lg shadow hover:shadow-lg transition-all flex items-center justify-center">
-                            <i class="fas fa-bell mr-2"></i> Buat Pengumuman
+                        <a href="{{ route('guru.announcements.create') }}" class="bg-gradient-to-r from-purple-400 to-purple-500 text-white py-3 px-4 rounded-lg shadow hover:shadow-lg transition-all flex items-center justify-center">
+                            <i class="fas fa-bullhorn mr-2"></i> Buat Pengumuman
                         </a>
                     </div>
                 </div>
@@ -175,31 +172,26 @@
                         </h3>
                     </div>
                     <div class="p-6">
-                        <div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r mb-4">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-exclamation-circle text-orange-500"></i>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm text-orange-700 font-medium">
-                                        Validasi izin harus dilakukan sebelum pukul 17:00
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-info-circle text-blue-500"></i>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm text-blue-700 font-medium">
-                                        Rapat evaluasi guru akan dilaksanakan pada {{ now()->addDays(3)->format('d M Y') }}
-                                    </p>
+                        @forelse($announcements as $announcement)
+                            <div class="bg-{{ $announcement->urgency == 'high' ? 'red' : ($announcement->urgency == 'medium' ? 'yellow' : 'blue') }}-50 border-l-4 border-{{ $announcement->urgency == 'high' ? 'red' : ($announcement->urgency == 'medium' ? 'yellow' : 'blue') }}-500 p-4 rounded-r mb-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-{{ $announcement->urgency == 'high' ? 'exclamation-circle' : 'info-circle' }} text-{{ $announcement->urgency == 'high' ? 'red' : ($announcement->urgency == 'medium' ? 'yellow' : 'blue') }}-500"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-{{ $announcement->urgency == 'high' ? 'red' : ($announcement->urgency == 'medium' ? 'yellow' : 'blue') }}-700">
+                                            {{ $announcement->description }}
+                                        </p>
+                                        <p class="text-xs text-gray-500 mt-1">Dibuat oleh: {{ $announcement->creator->name }} | {{ $announcement->created_at->format('d M Y') }}</p>
+                                        @if($announcement->expires_at)
+                                            <p class="text-xs text-gray-500">Kadaluarsa: {{ $announcement->expires_at->format('d M Y') }}</p>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        @empty
+                            <p class="text-gray-600">Tidak ada pengumuman saat ini.</p>
+                        @endforelse
                     </div>
                 </div>
             </div>
@@ -225,7 +217,6 @@
                                 <p class="text-xs text-gray-500">{{ now()->subMinutes(15)->format('H:i') }} - {{ now()->format('d M Y') }}</p>
                             </div>
                         </div>
-
                         <div class="py-3 flex items-start">
                             <div class="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mr-4">
                                 <i class="fas fa-check-circle text-green-500"></i>
@@ -235,7 +226,6 @@
                                 <p class="text-xs text-gray-500">{{ now()->subHours(2)->format('H:i') }} - {{ now()->format('d M Y') }}</p>
                             </div>
                         </div>
-
                         <div class="py-3 flex items-start">
                             <div class="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center mr-4">
                                 <i class="fas fa-file-alt text-yellow-500"></i>
@@ -245,7 +235,6 @@
                                 <p class="text-xs text-gray-500">{{ now()->subHours(3)->format('H:i') }} - {{ now()->format('d M Y') }}</p>
                             </div>
                         </div>
-
                         <div class="py-3 flex items-start">
                             <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
                                 <i class="fas fa-file-export text-indigo-500"></i>
@@ -275,7 +264,6 @@
                             <h4 class="text-2xl font-bold text-gray-800">{{ $todayStats['present'] ?? 0 }}</h4>
                             <p class="text-sm text-gray-500">Sudah Hadir</p>
                         </div>
-
                         <div class="text-center">
                             <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-yellow-100 mb-2">
                                 <i class="fas fa-file-alt text-yellow-500 text-2xl"></i>
@@ -283,7 +271,6 @@
                             <h4 class="text-2xl font-bold text-gray-800">{{ $todayStats['permission'] ?? 0 }}</h4>
                             <p class="text-sm text-gray-500">Izin</p>
                         </div>
-
                         <div class="text-center">
                             <div class="inline-flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-2">
                                 <i class="fas fa-user-times text-red-500 text-2xl"></i>
@@ -292,7 +279,6 @@
                             <p class="text-sm text-gray-500">Alpa</p>
                         </div>
                     </div>
-
                     <div class="rounded-lg bg-gray-50 p-4">
                         <div class="flex justify-between items-center mb-3">
                             <h5 class="font-medium text-gray-700">Persentase Kehadiran</h5>
