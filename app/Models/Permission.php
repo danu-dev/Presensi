@@ -8,8 +8,31 @@ use Illuminate\Database\Eloquent\Model;
 class Permission extends Model
 {
     use HasFactory;
-    protected $guarded = [];
-    protected $casts =['date'=>'datetime'];
+    protected $fillable = [
+        'user_id',
+        'name',
+        'description',
+        'date',
+        'proof_image',
+        'status',
+        'validated_by',
+        'validated_at',
+    ];
+
+    protected $casts = [
+        'date'         => 'date',
+        'validated_at' => 'datetime',
+    ];
+
+    public function scopeApproved($query)
+    {
+        return $query->where('status', 'approved');
+    }
+
+    public function scopePending($query)
+    {
+        return $query->whereNull('status');
+    }
     public function user()
     {
         return $this->belongsTo(User::class);

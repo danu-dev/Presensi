@@ -47,17 +47,16 @@
 
                     <div class="space-y-4">
                         <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <label for="login" class="block text-sm font-medium text-gray-700">Username atau Email</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                                     </svg>
                                 </div>
-                                <input id="email" name="email" type="email" value="{{ old('email') }}" required class="pl-10 focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-md border-gray-300 shadow-sm py-3" placeholder="nama@example.com">
+                                <input id="login" name="login" type="text" value="{{ old('login') }}" required autofocus class="pl-10 focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-md border-gray-300 shadow-sm py-3" placeholder="username atau nama@example.com">
                             </div>
-                            @error('email')
+                            @error('login')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>

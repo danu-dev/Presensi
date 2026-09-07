@@ -1,22 +1,24 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Repositories\Contracts\AboutRepositoryInterface;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreAboutRequest;
 use App\Models\About;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class AboutController extends Controller
 {
-    public function __construct()
-    {
+    public function __construct(
+        protected AboutRepositoryInterface $aboutRepo
+    ) {
         $this->middleware(['auth', 'role:admin']);
     }
 
     public function index()
     {
-        $abouts = About::all();
+        $abouts = $this->aboutRepo->getAll();
         return view('admin.about.index', compact('abouts'));
     }
 
@@ -25,20 +27,15 @@ class AboutController extends Controller
         return view('admin.about.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreAboutRequest $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'image' => 'nullable|image|max:2048',
-        ]);
+        $validated = $request->validated();
 
-        $data = $request->all();
         if ($request->hasFile('image')) {
-            $data['image_path'] = $request->file('image')->store('about', 'public');
+            $validated['image_path'] = $request->file('image')->store('about', 'public');
         }
 
-        About::create($data);
+        $this->aboutRepo->create($validated);
 
         return redirect()->route('admin.about.index')->with('success', 'Konten About berhasil ditambahkan.');
     }
@@ -48,37 +45,29 @@ class AboutController extends Controller
         return view('admin.about.edit', compact('about'));
     }
 
-    public function update(Request $request, About $about)
+    public function update(StoreAboutRequest $request, About $about)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'image' => 'nullable|image|max:2048',
-        ]);
-
-        $data = $request->all();
+        $validated = $request->validated();
 
         if ($request->hasFile('image')) {
-            // Hapus gambar lama jika ada
             if ($about->image_path) {
                 Storage::disk('public')->delete($about->image_path);
             }
-            $data['image_path'] = $request->file('image')->store('about', 'public');
+            $validated['image_path'] = $request->file('image')->store('about', 'public');
         }
 
-        $about->update($data);
+        $this->aboutRepo->update($about, $validated);
 
         return redirect()->route('admin.about.index')->with('success', 'Konten About berhasil diperbarui.');
     }
 
     public function destroy(About $about)
     {
-        // Hapus gambar dari storage jika ada
         if ($about->image_path) {
             Storage::disk('public')->delete($about->image_path);
         }
 
-        $about->delete();
+        $this->aboutRepo->delete($about);
 
         return redirect()->route('admin.about.index')->with('success', 'Konten About berhasil dihapus.');
     }

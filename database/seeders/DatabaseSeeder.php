@@ -12,18 +12,20 @@ class DatabaseSeeder extends Seeder
         // Insert users (1 admin, 1 guru, 10 students)
         DB::table('users')->insert([
             [
-                'name' => 'Admin 1',
-                'email' => 'admin1@example.com',
-                'password' => bcrypt('password'),
-                'role' => 'admin',
+                'name'       => 'Admin 1',
+                'username'   => 'admin1',
+                'email'      => 'admin1@example.com',
+                'password'   => bcrypt('password'),
+                'role'       => 'admin',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Guru 1',
-                'email' => 'guru1@example.com',
-                'password' => bcrypt('password'),
-                'role' => 'guru',
+                'name'       => 'Guru 1',
+                'username'   => 'guru1',
+                'email'      => 'guru1@example.com',
+                'password'   => bcrypt('password'),
+                'role'       => 'guru',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -44,13 +46,16 @@ class DatabaseSeeder extends Seeder
 
         $students = [];
         foreach ($names as $index => $name) {
+            $baseSlug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', str_replace([' ', '.'], '', $name)));
+            $username = substr($baseSlug, 0, 15) . ($index + 1);
             $email = strtolower(str_replace([' ', '.'], '_', $name)) . '@example.com';
             $students[] = [
-                'name' => $name,
-                'email' => $email,
-                'password' => bcrypt('password'),
-                'role' => 'user',
-                'nisn' => '12345891' . ($index + 1),
+                'name'       => $name,
+                'username'   => $username,
+                'email'      => $email,
+                'password'   => bcrypt('password'),
+                'role'       => 'user',
+                'nisn'       => '12345891' . ($index + 1),
                 'created_at' => now(),
                 'updated_at' => now(),
             ];

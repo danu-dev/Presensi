@@ -2,57 +2,44 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Http\Requests\Profile\UpdateProfileRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
-    public function __construct()
-    {
+    public function __construct(
+        protected UserRepositoryInterface $userRepo
+    ) {
         $this->middleware('auth');
     }
 
-    /**
-     * Display the user's profile.
-     */
     public function show()
     {
         $user = Auth::user();
         return view('profile.show', compact('user'));
     }
 
-    /**
-     * Show the form for editing the user's profile.
-     */
     public function edit()
     {
         $user = Auth::user();
         return view('profile.edit', compact('user'));
     }
 
-    /**
-     * Update the user's profile.
-     */
-    public function update(Request $request)
+    public function update(UpdateProfileRequest $request)
     {
         $user = Auth::user();
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8|confirmed',
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        $validated = $request->validated();
 
         $data = [
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'  => $validated['name'],
+            'email' => $validated['email'],
         ];
 
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
+        if (!empty($validated['password'])) {
+            $data['password'] = Hash::make($validated['password']);
         }
 
         if ($request->hasFile('profile_photo')) {
@@ -62,7 +49,7 @@ class ProfileController extends Controller
             $data['profile_photo'] = $request->file('profile_photo')->store('profiles', 'public');
         }
 
-        $user->update($data);
+        $this->userRepo->update($user, $data);
 
         return redirect()->route('profile.show')->with('success', 'Profil berhasil diperbarui!');
     }

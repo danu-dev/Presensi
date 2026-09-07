@@ -1,32 +1,35 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AboutController;
+use App\Http\Controllers\Admin\AssignmentMonitoringController as AdminAssignmentController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\GalleryController;
+use App\Http\Controllers\Admin\HomeContentController;
+use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\ProjectController;
+use App\Http\Controllers\Admin\RoomController;
+use App\Http\Controllers\Admin\StudentController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\GuruController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\GalleryController;
+use App\Http\Controllers\Guru\AnnouncementController as GuruAnnouncementController;
+use App\Http\Controllers\Guru\AssignmentController as GuruAssignmentController;
+use App\Http\Controllers\Guru\GuruController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ProjectController;
-use App\Http\Controllers\StudentController;
-use App\Http\Controllers\AboutController;
-use App\Http\Controllers\HomeContentController;
+use App\Http\Controllers\User\AssignmentController as UserAssignmentController;
+use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\WelcomeController;
+use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    $homeContents = \App\Models\HomeContent::all();
-    $abouts = \App\Models\About::all();
-    $galleries = \App\Models\Gallery::all();
-    $projects = \App\Models\Project::all();
-    $students = \App\Models\Student::all();
-    return view('welcome', compact('homeContents', 'abouts', 'galleries', 'projects', 'students'));
-});
+Route::get('/', WelcomeController::class)->name('home');
 
 // Auth Routes
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-Route::post('/register', [AuthController::class, 'register']);
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+});
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // User Routes
 Route::middleware(['auth', 'role:user'])->prefix('user')->group(function () {
@@ -36,6 +39,11 @@ Route::middleware(['auth', 'role:user'])->prefix('user')->group(function () {
     Route::get('/history', [UserController::class, 'history']);
     Route::get('/permission', [UserController::class, 'permissionForm'])->name('user.permission');
     Route::post('/permission', [UserController::class, 'submitPermission'])->name('user.submit.permission');
+
+    // Assignment Routes for User
+    Route::get('/assignments', [UserAssignmentController::class, 'index'])->name('user.assignments.index');
+    Route::get('/assignments/{assignment}', [UserAssignmentController::class, 'show'])->name('user.assignments.show');
+    Route::post('/assignments/{assignment}/submit', [UserAssignmentController::class, 'submit'])->name('user.assignments.submit');
 });
 
 // Guru Routes
@@ -51,88 +59,38 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->group(function () {
     Route::get('/students/{room_id}', [GuruController::class, 'getStudentsByRoom'])->name('get.students');
 
     // Announcement Routes
-    Route::get('/announcements', [GuruController::class, 'announcements'])->name('guru.announcements.index');
-    Route::get('/announcements/create', [GuruController::class, 'createAnnouncement'])->name('guru.announcements.create');
-    Route::post('/announcements', [GuruController::class, 'storeAnnouncement'])->name('guru.announcements.store');
-    Route::get('/announcements/{announcement}/edit', [GuruController::class, 'editAnnouncement'])->name('guru.announcements.edit');
-    Route::put('/announcements/{announcement}', [GuruController::class, 'updateAnnouncement'])->name('guru.announcements.update');
-    Route::delete('/announcements/{announcement}', [GuruController::class, 'destroyAnnouncement'])->name('guru.announcements.destroy');
+    Route::resource('announcements', GuruAnnouncementController::class)->except(['show'])->names('guru.announcements');
+
+    // Assignment Routes for Guru
+    Route::resource('assignments', GuruAssignmentController::class)->except(['edit', 'update'])->names('guru.assignments');
+    Route::post('/submissions/{submission}/grade', [GuruAssignmentController::class, 'grade'])->name('guru.submissions.grade');
 });
 
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/dashboard', AdminDashboardController::class)->name('admin.dashboard');
 
-    // Home Routes
-    Route::get('/home', [HomeContentController::class, 'index'])->name('admin.home.index');
-    Route::get('/home/create', [HomeContentController::class, 'create'])->name('admin.home.create');
-    Route::post('/home', [HomeContentController::class, 'store'])->name('admin.home.store');
-    Route::get('/home/{homeContent}/edit', [HomeContentController::class, 'edit'])->name('admin.home.edit');
-    Route::put('/home/{homeContent}', [HomeContentController::class, 'update'])->name('admin.home.update');
-    Route::delete('/home/{homeContent}', [HomeContentController::class, 'destroy'])->name('admin.home.destroy');
-
-    // About Routes
-    Route::get('/about', [AboutController::class, 'index'])->name('admin.about.index');
-    Route::get('/about/create', [AboutController::class, 'create'])->name('admin.about.create');
-    Route::post('/about', [AboutController::class, 'store'])->name('admin.about.store');
-    Route::get('/about/{about}/edit', [AboutController::class, 'edit'])->name('admin.about.edit');
-    Route::put('/about/{about}', [AboutController::class, 'update'])->name('admin.about.update');
-    Route::delete('/about/{about}', [AboutController::class, 'destroy'])->name('admin.about.destroy');
-
-    // Gallery Routes
-    Route::get('/gallery', [GalleryController::class, 'index'])->name('admin.gallery.index');
-    Route::get('/gallery/create', [GalleryController::class, 'create'])->name('admin.gallery.create');
-    Route::post('/gallery', [GalleryController::class, 'store'])->name('admin.gallery.store');
-    Route::get('/gallery/{gallery}/edit', [GalleryController::class, 'edit'])->name('admin.gallery.edit');
-    Route::put('/gallery/{gallery}', [GalleryController::class, 'update'])->name('admin.gallery.update');
-    Route::delete('/gallery/{gallery}', [GalleryController::class, 'destroy'])->name('admin.gallery.destroy');
-
-    // Projects Routes
-    Route::get('/projects', [ProjectController::class, 'index'])->name('admin.projects.index');
-    Route::get('/projects/create', [ProjectController::class, 'create'])->name('admin.projects.create');
-    Route::post('/projects', [ProjectController::class, 'store'])->name('admin.projects.store');
-    Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])->name('admin.projects.edit');
-    Route::put('/projects/{project}', [ProjectController::class, 'update'])->name('admin.projects.update');
-    Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('admin.projects.destroy');
-
-    // Students Routes
-    Route::get('/students', [StudentController::class, 'index'])->name('admin.students.index');
-    Route::get('/students/create', [StudentController::class, 'create'])->name('admin.students.create');
-    Route::post('/students', [StudentController::class, 'store'])->name('admin.students.store');
-    Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('admin.students.edit');
-    Route::put('/students/{student}', [StudentController::class, 'update'])->name('admin.students.update');
-    Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('admin.students.destroy');
-
-    // Users Resource
-    Route::resource('users', AdminController::class)->names([
-        'index' => 'admin.users.index',
-        'create' => 'admin.users.create',
-        'store' => 'admin.users.store',
-        'edit' => 'admin.users.edit',
-        'update' => 'admin.users.update',
+    Route::resource('home', HomeContentController::class)->except(['show'])->names('admin.home');
+    Route::resource('about', AboutController::class)->except(['show'])->names('admin.about');
+    Route::resource('gallery', GalleryController::class)->except(['show'])->names('admin.gallery');
+    Route::resource('projects', ProjectController::class)->except(['show'])->names('admin.projects');
+    Route::resource('students', StudentController::class)->except(['show'])->names('admin.students');
+    Route::resource('users', AdminUserController::class)->names([
+        'index'   => 'admin.users.index',
+        'create'  => 'admin.users.create',
+        'store'   => 'admin.users.store',
+        'edit'    => 'admin.users.edit',
+        'update'  => 'admin.users.update',
         'destroy' => 'admin.users.destroy',
     ]);
-
-    // Locations Manual Routes
-    Route::get('/locations', [AdminController::class, 'indexLocations'])->name('admin.locations.index');
-    Route::get('/locations/create', [AdminController::class, 'createLocations'])->name('admin.locations.create');
-    Route::post('/locations', [AdminController::class, 'storeLocations'])->name('admin.locations.store');
-    Route::get('/locations/{id}/edit', [AdminController::class, 'editLocations'])->name('admin.locations.edit');
-    Route::put('/locations/{id}', [AdminController::class, 'updateLocations'])->name('admin.locations.update');
-    Route::delete('/locations/{id}', [AdminController::class, 'destroyLocations'])->name('admin.locations.destroy');
-
-    // Rooms Manual Routes
-    Route::get('/rooms', [AdminController::class, 'indexRooms'])->name('admin.rooms.index');
-    Route::get('/rooms/create', [AdminController::class, 'createRooms'])->name('admin.rooms.create');
-    Route::post('/rooms', [AdminController::class, 'storeRooms'])->name('admin.rooms.store');
-    Route::get('/rooms/{id}/edit', [AdminController::class, 'editRooms'])->name('admin.rooms.edit');
-    Route::put('/rooms/{id}', [AdminController::class, 'updateRooms'])->name('admin.rooms.update');
-    Route::delete('/rooms/{id}', [AdminController::class, 'destroyRooms'])->name('admin.rooms.destroy');
+    Route::resource('locations', LocationController::class)->except(['show'])->names('admin.locations');
+    Route::resource('rooms', RoomController::class)->except(['show'])->names('admin.rooms');
+    Route::get('/assignments', [AdminAssignmentController::class, 'index'])->name('admin.assignments.index');
 });
 
 // Profile Routes (Authenticated Users)
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
-    Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
-    Route::get('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });

@@ -100,15 +100,19 @@
                     @if (auth()->user()->role == 'user')
                         <li><a href="{{ url('user/dashboard') }}" class="nav-link-sidebar {{ request()->is('user/dashboard') ? 'active' : '' }}"><i class="fas fa-tachometer-alt mr-2"></i> Dashboard</a></li>
                         <li><a href="{{ url('user/attendance') }}" class="nav-link-sidebar {{ request()->is('user/attendance') ? 'active' : '' }}"><i class="fas fa-check-circle mr-2"></i> Absensi</a></li>
+                        <li><a href="{{ route('user.assignments.index') }}" class="nav-link-sidebar {{ request()->is('user/assignments*') ? 'active' : '' }}"><i class="fas fa-tasks mr-2"></i> Tugas Saya</a></li>
                         <li><a href="{{ url('user/history') }}" class="nav-link-sidebar {{ request()->is('user/history') ? 'active' : '' }}"><i class="fas fa-history mr-2"></i> Riwayat</a></li>
                         <li><a href="{{ url('user/permission') }}" class="nav-link-sidebar {{ request()->is('user/permission') ? 'active' : '' }}"><i class="fas fa-file-alt mr-2"></i> Izin</a></li>
                     @elseif (auth()->user()->role == 'guru')
                         <li><a href="{{ url('guru/dashboard') }}" class="nav-link-sidebar {{ request()->is('guru/dashboard') ? 'active' : '' }}"><i class="fas fa-tachometer-alt mr-2"></i> Dashboard</a></li>
+                        <li><a href="{{ route('guru.announcements.index') }}" class="nav-link-sidebar {{ request()->is('guru/announcements*') ? 'active' : '' }}"><i class="fas fa-bullhorn mr-2"></i> Pengumuman</a></li>
+                        <li><a href="{{ route('guru.assignments.index') }}" class="nav-link-sidebar {{ request()->is('guru/assignments*') ? 'active' : '' }}"><i class="fas fa-tasks mr-2"></i> Kelola Tugas</a></li>
                         <li><a href="{{ route('guru.manual_attendance') }}" class="nav-link-sidebar {{ request()->is('guru/manual-attendance') ? 'active' : '' }}"><i class="fas fa-user-check mr-2"></i>Absensi Manual</a></li>
                         <li><a href="{{ url('guru/report') }}" class="nav-link-sidebar {{ request()->is('guru/report') ? 'active' : '' }}"><i class="fas fa-chart-bar mr-2"></i> Laporan Absensi</a></li>
                         <li><a href="{{ url('guru/permissions') }}" class="nav-link-sidebar {{ request()->is('guru/permissions') ? 'active' : '' }}"><i class="fas fa-check-square mr-2"></i> Validasi Izin</a></li>
                     @elseif (auth()->user()->role == 'admin')
                         <li><a href="{{ url('admin/dashboard') }}" class="nav-link-sidebar {{ request()->is('admin/dashboard') ? 'active' : '' }}"><i class="fas fa-tachometer-alt mr-2"></i> Dashboard</a></li>
+                        <li><a href="{{ route('admin.assignments.index') }}" class="nav-link-sidebar {{ request()->is('admin/assignments*') ? 'active' : '' }}"><i class="fas fa-tasks mr-2"></i> Rekap Tugas</a></li>
                         <li x-data="{ open: false }">
                             <a href="#" class="nav-link-sidebar" @click.prevent="open = !open">
                                 <i class="fas fa-database mr-2"></i> Kelola Data

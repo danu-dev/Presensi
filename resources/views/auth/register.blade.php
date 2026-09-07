@@ -62,6 +62,19 @@
                         </div>
 
                         <div>
+                            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-400 font-bold">@</span>
+                                </div>
+                                <input id="username" name="username" type="text" value="{{ old('username') }}" required autocomplete="username" class="pl-10 focus:ring-indigo-500 focus:border-indigo-500 block w-full rounded-md border-gray-300 shadow-sm py-3" placeholder="johndoe">
+                            </div>
+                            @error('username')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
                             <label for="nisn" class="block text-sm font-medium text-gray-700">NISN</label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
